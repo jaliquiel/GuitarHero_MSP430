@@ -76,4 +76,7 @@ void BuzzerOff(void);
 void configKeypad(void);
 unsigned char getKey(void);
 
+void initButtons(void);
+unsigned int readButtons(void);
+
 #endif /* PERIPHERALS_H_ */
