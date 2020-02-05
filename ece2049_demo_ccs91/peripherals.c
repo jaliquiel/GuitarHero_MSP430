@@ -212,6 +212,49 @@ void configDisplay(void)
     Graphics_flushBuffer(&g_sContext);
 }
 
+void initButtons(void){
+    //configure S1 and S4 with pull up resistors
+    P7SEL &= 0xEE;
+    P7DIR &= 0xEE;
+    P7OUT &= ~0xEE;
+    P7REN |= 0x11;
+
+    //configure S2 with pull up resistor
+    P3SEL &= 0xBF;
+    P3DIR &= 0xBF;
+    P3OUT |= ~0xBF;
+    P3REN |= ~0xBF;
+
+    //configure S3 with pull up resistor
+    P2SEL &= ~0x04;
+    P2DIR &= ~0x04;
+    P2OUT |= 0x04;
+    P2REN |= 0x04;
+}
+
+unsigned int readButtons(void){
+    unsigned int ret_val = 0;
+
+    P7OUT |= ~0xEE;
+    P3OUT &= ~0xBF;
+    P2OUT &= 0x04;
+
+    if((P7IN & BIT0) == 0)
+        ret_val += 1;
+    if((P3IN & BIT6) == 0)
+        ret_val += 2;
+    if((P2IN & BIT2) == 0)
+           ret_val += 4;
+    if((P7IN & BIT4) == 0)
+        ret_val += 8;
+
+    P7OUT &= 0xEE;
+    P3OUT |= ~0XBF;
+    P2OUT |= 0x04;
+
+    return ret_val;
+}
+
 /*
 void setupSPI_DAC(void)
 {
