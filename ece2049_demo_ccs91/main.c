@@ -97,6 +97,16 @@ void main(void)
             // wait awhile before clearing LEDs
             swDelay(1);
             setLeds(0);
+		
+	//mew code for lab 2	
+	int currButton = readButtons();
+       	currButton += '0';
+       	if(currButton != '0'){
+           setLeds(currButton - 0x30);
+       	}
+       	else{
+           setLeds(0);
+       }
         }
 
     }  // end while (1)
