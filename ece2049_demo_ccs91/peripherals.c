@@ -255,6 +255,28 @@ unsigned int readButtons(void){
     return ret_val;
 }
 
+void configUserLED (char inbits){
+    //configure LED1
+    P1SEL &= ~BIT0;
+    P1DIR |= BIT0;
+    P1OUT &= ~BIT0;
+
+    //configure LED2
+    P4SEL &= ~BIT7;
+    P4DIR |= BIT7;
+    P4OUT &= ~BIT7;
+
+    unsigned char mask1 = 0;
+    unsigned char mask2 = 0;
+
+    if (inbits & BIT0)
+        mask1 |= BIT0;
+    if (inbits & BIT1)
+        mask2 |= BIT7;
+    P1OUT |= mask1;
+    P4OUT |= mask2;
+}
+
 /*
 void setupSPI_DAC(void)
 {
