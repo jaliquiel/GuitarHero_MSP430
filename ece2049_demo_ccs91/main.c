@@ -3,114 +3,118 @@
 /***************************************************/
 
 #include <msp430.h>
-
-/* Peripherals.c and .h are where the functions that implement
- * the LEDs and keypad, etc are. It is often useful to organize
- * your code by putting like functions together in files.
- * You include the header associated with that file(s)
- * into the main file of your project. */
 #include "peripherals.h"
 
 // Function Prototypes
 void swDelay(char numLoops);
 
 // Declare globals here
+enum GAME_STATE {welcome = 0, songStart = 1, song = 2};
 
 // Main
 void main(void)
-
 {
-    unsigned char currKey=0, dispSz = 3;
-    unsigned char dispThree[3];
-
-    // Define some local variables
-    float a_flt = 190.68;
-    int  test = 0x0600, i=0;     // In C prefix 0x means the number that follows is in hex
-    long unsigned X= 123456;    // No prefix so number is assumed to be in decimal
-    unsigned char myGrade='A';
-    unsigned char initial='S';
-    //unsigned char your_name[14] = "Your Name Here";
-                                    // What happens when you change the array length?
-                                    // What should it be? Do you need null terminator /n ?
-
-
-    WDTCTL = WDTPW | WDTHOLD;    // Stop watchdog timer. Always need to stop this!!
-                                 // You can then configure it properly, if desired
-
-    // Some utterly useless instructions -- Step through them
-    // What size does the Code Composer MSP430 Compiler use for the
-    // following variable types? A float, an int, a long integer and a char?
-    a_flt = a_flt*test;
-    X = test+X;
-    test = test-myGrade;    // A number minus a letter?? What's actually going on here?
-                            // What value stored in myGrade (i.e. what's the ASCII code for "A")?
-                            // Thus, what is the new value of test? Explain?
+    WDTCTL = WDTPW | WDTHOLD;
 
     // Useful code starts here
     initLeds();
+    initButtons();
 
     configDisplay();
     configKeypad();
 
-    // *** Intro Screen ***
-    Graphics_clearDisplay(&g_sContext); // Clear the display
+    unsigned char currKey = 0;
+    unsigned int currButton = 0;
+    unsigned int m;
+    enum GAME_STATE state = welcome;
 
-    // Write some text to the display
-    Graphics_drawStringCentered(&g_sContext, "Welcome", AUTO_STRING_LENGTH, 48, 15, TRANSPARENT_TEXT);
-    Graphics_drawStringCentered(&g_sContext, "to", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
-    Graphics_drawStringCentered(&g_sContext, "ECE2049-C20!", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
-
-    // Draw a box around everything because it looks nice
-    Graphics_Rectangle box = {.xMin = 5, .xMax = 91, .yMin = 5, .yMax = 91 };
-    Graphics_drawRectangle(&g_sContext, &box);
-
-    // We are now done writing to the display.  However, if we stopped here, we would not
-    // see any changes on the actual LCD.  This is because we need to send our changes
-    // to the LCD, which then refreshes the display.
-    // Since this is a slow operation, it is best to refresh (or "flush") only after
-    // we are done drawing everything we need.
-    Graphics_flushBuffer(&g_sContext);
-
-    dispThree[0] = ' ';
-    dispThree[2] = ' ';
 
     while (1)    // Forever loop
     {
-        // Check if any keys have been pressed on the 3x4 keypad
-        currKey = getKey();
-        if (currKey == '*')
-            BuzzerOn();
-        if (currKey == '#')
-            BuzzerOff();
-        if ((currKey >= '0') && (currKey <= '9'))
-            setLeds(currKey - 0x30);
-
-        if (currKey)
-        {
-            dispThree[1] = currKey;
-            // Draw the new character to the display
-            Graphics_drawStringCentered(&g_sContext, dispThree, dispSz, 48, 55, OPAQUE_TEXT);
+        switch(state){
+        case welcome: // Start Screen
+            // Write some text to the display
+            Graphics_drawStringCentered(&g_sContext, "MSP430", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "HERO", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "Press *", AUTO_STRING_LENGTH, 48, 65, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "to start", AUTO_STRING_LENGTH, 48, 75, TRANSPARENT_TEXT);
 
             // Refresh the display so it shows the new data
             Graphics_flushBuffer(&g_sContext);
 
-            // wait awhile before clearing LEDs
-            swDelay(1);
-            setLeds(0);
-		
-	//mew code for lab 2	
-	int currButton = readButtons();
-       	currButton += '0';
-       	if(currButton != '0'){
-           setLeds(currButton - 0x30);
-       	}
-       	else{
-           setLeds(0);
-       }
+            while(currKey != '*'){
+                currKey = getKey();
+            }
+            if(currKey == '*'){
+                Graphics_clearDisplay(&g_sContext); // Clear the display
+                state = songStart;
+            }
+            break;
+
+        case songStart:
+            m = 20000;
+            while(1){
+                m--;
+                if (m > 15000)
+                    Graphics_drawStringCentered(&g_sContext, "GET READY", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
+                else if ((m > 10000) && (m <= 15000)){
+                    Graphics_drawStringCentered(&g_sContext, "3...", AUTO_STRING_LENGTH, 24, 35, TRANSPARENT_TEXT);
+                    configUserLED('1'-'0');
+                }
+                else if ((m > 5000) && (m <= 15000)){
+                    Graphics_drawStringCentered(&g_sContext, "2...", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+                    configUserLED('2'-'0');
+                }
+                else if ((m > 0) && (m <= 5000)){
+                    Graphics_drawStringCentered(&g_sContext, "1...", AUTO_STRING_LENGTH, 72, 35, TRANSPARENT_TEXT);
+                    configUserLED('3'-'0');
+                }
+                else if (m == 0){
+                    Graphics_drawStringCentered(&g_sContext, "Go!", AUTO_STRING_LENGTH, 48, 15, TRANSPARENT_TEXT);
+                    configUserLED('0');
+                    return 0;
+
+                }
+            }
+            Graphics_clearDisplay(&g_sContext);
+            state = song;
+            break;
+
+
+
+        case song:
+            currKey = getKey();
+            currButton = readButtons() + '0';
+            if(currButton != '0'){
+                setLeds(currButton - 0x30);
+            }
+            else{
+                setLeds(0);
+            }
+            configUserLED('1' - '0');
+
+            if(currKey == '#'){
+                Graphics_clearDisplay(&g_sContext);
+                state = welcome;
+            }
+
+            break;
+
         }
 
     }  // end while (1)
 }
+
+//void heroButtons(void){
+//    int currButton = readButtons();
+//    currButton += '0';
+//    if(currButton != '0'){
+//        setLeds(currButton - 0x30);
+//    }
+//    else{
+//        setLeds(0);
+//    }
+//}
 
 
 void swDelay(char numLoops)
