@@ -66,6 +66,22 @@ void setLeds(unsigned char state)
     P6OUT |= mask;
 }
 
+void configUserLED (char inbits){
+    //configure LED1
+    P1SEL &= ~BIT0;
+    P1DIR |= BIT0;
+    P1OUT &= ~BIT0;
+
+    //configure LED2
+    P4SEL &= ~BIT7;
+    P4DIR |= BIT7;
+    P4OUT &= ~BIT7;
+
+    if (inbits & BIT0)
+        P1OUT |= BIT0;
+    if (inbits & BIT1)
+        P4OUT |= BIT7;
+}
 
 /*
  * Enable a PWM-controlled buzzer on P3.5
@@ -214,30 +230,26 @@ void configDisplay(void)
 
 void initButtons(void){
     //configure S1 and S4 with pull up resistors
-    P7SEL &= 0xEE;
-    P7DIR &= 0xEE;
-    P7OUT &= ~0xEE;
-    P7REN |= 0x11;
+    P7SEL &= ~(BIT0|BIT4);
+    P7DIR &= ~(BIT0|BIT4);
+    P7REN |= (BIT0|BIT4);
+    P7OUT |= (BIT0|BIT4);
 
     //configure S2 with pull up resistor
-    P3SEL &= 0xBF;
-    P3DIR &= 0xBF;
-    P3OUT |= ~0xBF;
-    P3REN |= ~0xBF;
+    P3SEL &= ~BIT6;
+    P3DIR &= ~BIT6;
+    P3REN |= BIT6;
+    P3OUT |= BIT6;
 
     //configure S3 with pull up resistor
-    P2SEL &= ~0x04;
-    P2DIR &= ~0x04;
-    P2OUT |= 0x04;
-    P2REN |= 0x04;
+    P2SEL &= ~BIT2;
+    P2DIR &= ~BIT2;
+    P2REN |= BIT2;
+    P2OUT |= BIT2;
 }
 
 unsigned int readButtons(void){
     unsigned int ret_val = 0;
-
-    P7OUT |= ~0xEE;
-    P3OUT &= ~0xBF;
-    P2OUT &= 0x04;
 
     if((P7IN & BIT0) == 0)
         ret_val += 1;
@@ -248,33 +260,7 @@ unsigned int readButtons(void){
     if((P7IN & BIT4) == 0)
         ret_val += 8;
 
-    P7OUT &= 0xEE;
-    P3OUT |= ~0XBF;
-    P2OUT |= 0x04;
-
     return ret_val;
-}
-
-void configUserLED (char inbits){
-    //configure LED1
-    P1SEL &= ~BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
-
-    //configure LED2
-    P4SEL &= ~BIT7;
-    P4DIR |= BIT7;
-    P4OUT &= ~BIT7;
-
-    unsigned char mask1 = 0;
-    unsigned char mask2 = 0;
-
-    if (inbits & BIT0)
-        mask1 |= BIT0;
-    if (inbits & BIT1)
-        mask2 |= BIT7;
-    P1OUT |= mask1;
-    P4OUT |= mask2;
 }
 
 /*
