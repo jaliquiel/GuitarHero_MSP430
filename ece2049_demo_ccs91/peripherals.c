@@ -108,6 +108,35 @@ void BuzzerOn(void)
     TB0CCR5   = TB0CCR0/2;                  // Configure a 50% duty cycle
 }
 
+
+/*
+ * Enable a PWM-controlled buzzer on P3.5
+ * This function makes use of TimerB0.
+ */
+void BuzzerNote(unsigned int frequency)
+{
+    // Initialize PWM output on P3.5, which corresponds to TB0.5
+    P3SEL |= BIT5; // Select peripheral output mode for P3.5
+    P3DIR |= BIT5;
+
+    TB0CTL  = (TBSSEL__ACLK|ID__1|MC__UP);  // Configure Timer B0 to use ACLK, divide by 1, up mode
+    TB0CTL  &= ~TBIE;                       // Explicitly Disable timer interrupts for safety
+
+    // Now configure the timer period, which controls the PWM period
+    // Doing this with a hard coded values is NOT the best method
+    // We do it here only as an example. You will fix this in Lab 2.
+//    unsigned int period = 1 / frequency;
+    TB0CCR0   = 32768 / frequency;                    // Set the PWM period in ACLK ticks
+    TB0CCTL0 &= ~CCIE;                  // Disable timer interrupts
+
+    // Configure CC register 5, which is connected to our PWM pin TB0.5
+    TB0CCTL5  = OUTMOD_7;                   // Set/reset mode for PWM
+    TB0CCTL5 &= ~CCIE;                      // Disable capture/compare interrupts
+    TB0CCR5   = TB0CCR0/2;                  // Configure a 50% duty cycle
+}
+
+
+
 /*
  * Disable the buzzer on P7.5
  */
@@ -294,3 +323,25 @@ __interrupt void TIMER1_A0_ISR (void)
 	// Not sure where Timer A1 is configured?
 	Sharp96x96_SendToggleVCOMCommand();  // display needs this toggle < 1 per sec
 }
+
+//------------------------------------------------------------------------------
+// Timer2 A2 Interrupt Service Routine
+//------------------------------------------------------------------------------
+#pragma vector=TIMER2_A0_VECTOR
+__interrupt void TIMER_A2_ISR (void)
+{
+    // Display is using Timer A1
+    // Not sure where Timer A1 is configured?
+//    Sharp96x96_SendToggleVCOMCommand();  // display needs this toggle < 1 per sec
+
+    TA2CTL = TASSEL_1 + ID_0 + MC_1;
+    TA2CCR0 = 163;
+    TA2CCTL0 = CCIE;
+
+
+
+}
+
+
+
+

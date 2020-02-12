@@ -72,8 +72,10 @@ void setLeds(unsigned char state);
 void configDisplay(void);
 void BuzzerOn(void);
 void BuzzerOff(void);
+void BuzzerNote(unsigned int frequency);
 
 void configKeypad(void);
+void configUserLED (char inbits);
 unsigned char getKey(void);
 
 void initButtons(void);

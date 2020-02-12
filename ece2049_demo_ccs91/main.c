@@ -2,6 +2,12 @@
 /**************  13 March 2019   ******************/
 /***************************************************/
 
+/**
+ * - When are we supposed to start timer A2
+ */
+
+
+
 #include <msp430.h>
 #include "peripherals.h"
 
@@ -15,6 +21,8 @@ enum GAME_STATE {welcome = 0, songStart = 1, song = 2};
 void main(void)
 {
     WDTCTL = WDTPW | WDTHOLD;
+    __bis_SR_register(GIE); // Global INterrupt enable
+
 
     // Useful code starts here
     initLeds();
@@ -26,7 +34,9 @@ void main(void)
     unsigned char currKey = 0;
     unsigned int currButton = 0;
     unsigned int m;
+    int i;
     enum GAME_STATE state = welcome;
+    char songNotes[28] = {'A', 'B', 'C', 'D'};
 
 
     while (1)    // Forever loop
@@ -52,38 +62,60 @@ void main(void)
             break;
 
         case songStart:
-            m = 20000;
+            m = 30;
             while(1){
                 m--;
-                if (m > 15000)
+                if (m > 15){
                     Graphics_drawStringCentered(&g_sContext, "GET READY", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
-                else if ((m > 10000) && (m <= 15000)){
+                }
+                else if ((m > 10) && (m <= 15)){
                     Graphics_drawStringCentered(&g_sContext, "3...", AUTO_STRING_LENGTH, 24, 35, TRANSPARENT_TEXT);
                     configUserLED('1'-'0');
                 }
-                else if ((m > 5000) && (m <= 15000)){
+                else if ((m > 5) && (m <= 10)){
                     Graphics_drawStringCentered(&g_sContext, "2...", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
                     configUserLED('2'-'0');
                 }
-                else if ((m > 0) && (m <= 5000)){
+                else if ((m > 0) && (m <= 5)){
                     Graphics_drawStringCentered(&g_sContext, "1...", AUTO_STRING_LENGTH, 72, 35, TRANSPARENT_TEXT);
                     configUserLED('3'-'0');
                 }
                 else if (m == 0){
                     Graphics_drawStringCentered(&g_sContext, "Go!", AUTO_STRING_LENGTH, 48, 15, TRANSPARENT_TEXT);
                     configUserLED('0');
-                    return 0;
-
+                    Graphics_flushBuffer(&g_sContext);
+                    break;
                 }
+                Graphics_flushBuffer(&g_sContext);
             }
             Graphics_clearDisplay(&g_sContext);
             state = song;
             break;
 
-
-
         case song:
+
+
+
+            if(true){
+                unsigned int timer;
+            }
+
+            for(i = 0; i< 4; i++){
+                playNote(songNotes[i]);
+                swDelay(2);
+            }
+
+            runtimerA2();
+
+
+            while(1){
+                currButton = readButtons();
+
+            }
+
+
             currKey = getKey();
+
             currButton = readButtons() + '0';
             if(currButton != '0'){
                 setLeds(currButton - 0x30);
@@ -115,6 +147,32 @@ void main(void)
 //        setLeds(0);
 //    }
 //}
+
+// given a note, the curresponding LED lights up and the corresponding buzzer frequency is sent
+void playNote(char note){
+    unsigned int frequency;
+
+    switch(note){
+    case 'A':
+        frequency = 440;
+        setLeds('8' - 0x30);
+        break;
+    case 'B':
+        frequency = 494;
+        setLeds('4' - 0x30);
+        break;
+    case 'C':
+        frequency = 523;
+        setLeds('2' - 0x30);
+        break;
+    case 'D':
+        frequency = 587;
+        setLeds('1' - 0x30);
+        break;
+    }
+    BuzzerNote(frequency);
+
+}
 
 
 void swDelay(char numLoops)
