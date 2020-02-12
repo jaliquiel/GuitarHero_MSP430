@@ -324,23 +324,6 @@ __interrupt void TIMER1_A0_ISR (void)
 	Sharp96x96_SendToggleVCOMCommand();  // display needs this toggle < 1 per sec
 }
 
-//------------------------------------------------------------------------------
-// Timer2 A2 Interrupt Service Routine
-//------------------------------------------------------------------------------
-#pragma vector=TIMER2_A0_VECTOR
-__interrupt void TIMER_A2_ISR (void)
-{
-    // Display is using Timer A1
-    // Not sure where Timer A1 is configured?
-//    Sharp96x96_SendToggleVCOMCommand();  // display needs this toggle < 1 per sec
-
-    TA2CTL = TASSEL_1 + ID_0 + MC_1;
-    TA2CCR0 = 163;
-    TA2CCTL0 = CCIE;
-
-
-
-}
 
 
 
