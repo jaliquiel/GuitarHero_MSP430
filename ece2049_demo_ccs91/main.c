@@ -18,8 +18,18 @@ void swDelay(char numLoops);
 enum GAME_STATE {welcome = 0, songStart = 1, song = 2};
 long unsigned int timer_cnt = 0;
 //char songNotes[28] = {'A', 'B', 'C', 'D'};
-char songNotes[28] = {'C', 'C', 'D', 'E','C','E','D','C','C','D','E','C','B','C','C','D','E','F','E','D','C'}; // 21 notes
+//char songNotes[28] = {'C', 'C', 'D', 'E','C','E','D','C','C','D','E','C','B','C','C','D','E','F','E','D','C'}; // 21 notes
 int i;
+long unsigned int noteDuration;
+long unsigned int noteStartTime;
+
+struct note{
+    char name;
+    unsigned int frequency;
+    char ledValue;
+    long unsigned int noteDuration;
+
+};
 
 
 // Main
@@ -40,6 +50,75 @@ void main(void)
     unsigned int currButton = 0;
     unsigned int m;
     enum GAME_STATE state = welcome;
+
+//    struct note songNotes[28] =
+//    {
+//     {'A', 440, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'D', 587, '1' - 0x30, 200},
+//     {'E', 659, '8' - 0x30, 200},
+//     {'F', 698, '4' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//    };
+
+    int songNoteLength = 51;
+    struct note songNotes[51] =
+    {
+     {'C', 523, '2' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'D', 587, '1' - 0x30, 200},
+     {'E', 659, '8' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'E', 659, '8' - 0x30, 200},
+     {'D', 587, '1' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'D', 587, '1' - 0x30, 200},
+     {'E', 659, '8' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'D', 587, '1' - 0x30, 200},
+     {'E', 659, '8' - 0x30, 200},
+     {'F', 698, '4' - 0x30, 200},
+     {'E', 659, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+     {'F', 698, '4' - 0x30, 200},
+     {'E', 659, '8' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'D', 587, '1' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+    };
+
 
 
     while (1)    // Forever loop
@@ -65,25 +144,24 @@ void main(void)
             break;
 
         case songStart:
-            m = 30;
+            runTimerA2();
             while(1){
-                m--;
-                if (m > 15){
+                if (timer_cnt < 200){
                     Graphics_drawStringCentered(&g_sContext, "GET READY", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
                 }
-                else if ((m > 10) && (m <= 15)){
+                else if (timer_cnt < 400){
                     Graphics_drawStringCentered(&g_sContext, "3...", AUTO_STRING_LENGTH, 24, 35, TRANSPARENT_TEXT);
-                    configUserLED('1'-'0');
+                    configUserLED('1'-'0'); // left LED on red
                 }
-                else if ((m > 5) && (m <= 10)){
+                else if (timer_cnt < 600){
                     Graphics_drawStringCentered(&g_sContext, "2...", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
-                    configUserLED('2'-'0');
+                    configUserLED('2'-'0'); // right LED on green
                 }
-                else if ((m > 0) && (m <= 5)){
+                else if (timer_cnt < 800){
                     Graphics_drawStringCentered(&g_sContext, "1...", AUTO_STRING_LENGTH, 72, 35, TRANSPARENT_TEXT);
-                    configUserLED('3'-'0');
+                    configUserLED('3'-'0'); // both LED on
                 }
-                else if (m == 0){
+                else if (timer_cnt > 800){
                     Graphics_drawStringCentered(&g_sContext, "Go!", AUTO_STRING_LENGTH, 48, 15, TRANSPARENT_TEXT);
                     configUserLED('0');
                     Graphics_flushBuffer(&g_sContext);
@@ -91,24 +169,36 @@ void main(void)
                 }
                 Graphics_flushBuffer(&g_sContext);
             }
+            stopTimerA2(1);
             Graphics_clearDisplay(&g_sContext);
             state = song;
             break;
 
         case song:
 
-            i = 0;
-            while(i < 21){
-                runTimerA2();
 
-                while(timer_cnt < 200){
-                    playNote(songNotes[i]);
+            i = 0;
+            noteDuration = 200;
+            while(i < songNoteLength){
+                runTimerA2();
+                struct note currentNote = songNotes[i];
+
+                noteStartTime = timer_cnt;
+                while(timer_cnt < noteStartTime + noteDuration){
+                    currButton = readButtons();
+                    if(correctPress(currentNote.ledValue,currButton)){
+                        configUserLED('2'-'0'); // right LED on green
+                    }else{
+                        configUserLED('1'-'0'); // left LED on red
+                    }
+                    playNote(currentNote);
+
                 }
-                while(timer_cnt<215){
+                while(timer_cnt < noteStartTime + noteDuration + 15){
                     BuzzerOff();
                 }
+                configUserLED('0');
                 i++;
-                stopTimerA2(1);
             }
             BuzzerOff();
             runTimerA2(0);
@@ -116,36 +206,37 @@ void main(void)
             setLeds('0' - 0x30);
             currKey = 0;
             state = welcome;
-//
-////            for(i = 0; i< 4; i++){
-////                playNote(songNotes[i]);
-////                swDelay(2);
-////            }
-//
-//
-//
-//            while(1){
-//                currButton = readButtons();
-//
+            break;
+
+//            for(i = 0; i< 4; i++){
+//                playNote(songNotes[i]);
+//                swDelay(2);
 //            }
-//
-//            currKey = getKey();
-//
-//            currButton = readButtons() + '0';
-//            if(currButton != '0'){
-//                setLeds(currButton - 0x30);
-//            }
-//            else{
-//                setLeds(0);
-//            }
-//            configUserLED('1' - '0');
-//
-//            if(currKey == '#'){
-//                Graphics_clearDisplay(&g_sContext);
-//                state = welcome;
-//            }
-//
-//            break;
+
+
+
+            while(1){
+                currButton = readButtons();
+
+            }
+
+            currKey = getKey();
+
+            currButton = readButtons() + '0';
+            if(currButton != '0'){
+                setLeds(currButton - 0x30);
+            }
+            else{
+                setLeds(0);
+            }
+            configUserLED('1' - '0');
+
+            if(currKey == '#'){
+                Graphics_clearDisplay(&g_sContext);
+                state = welcome;
+            }
+
+            break;
 
         }
 
@@ -164,44 +255,19 @@ void main(void)
 //}
 
 // given a note, the curresponding LED lights up and the corresponding buzzer frequency is sent
-void playNote(char note){
-    unsigned int frequency;
+void playNote(struct note note){
 
-    switch(note){
-    case 'A':
-        frequency = 440;
-        setLeds('8' - 0x30);
-        break;
-    case 'B':
-        frequency = 494;
-        setLeds('4' - 0x30);
-        break;
-    case 'C':
-        frequency = 523;
-        setLeds('2' - 0x30);
-        break;
-    case 'D':
-        frequency = 587;
-        setLeds('1' - 0x30);
-        break;
-
-    case 'E':
-        frequency = 659;
-        setLeds('8' - 0x30);
-        break;
-    case 'F':
-        frequency = 698;
-        setLeds('4' - 0x30);
-        break;
-    case 'G':
-        frequency = 784;
-        setLeds('2' - 0x30);
-        break;
-
-    }
-    BuzzerNote(frequency);
+    setLeds(note.ledValue);
+    BuzzerNote(note.frequency);
 
 }
+
+bool correctPress(unsigned char ledValue, unsigned int buttonPressed){
+    if (ledValue & buttonPressed)
+        return true;
+    return false;
+}
+
 
 void runTimerA2(){
     TA2CTL = TASSEL_1 + ID_0 + MC_1;
