@@ -15,7 +15,7 @@
 void swDelay(char numLoops);
 
 // Declare globals here
-enum GAME_STATE {welcome = 0, songStart = 1, song = 2};
+enum GAME_STATE {welcome = 0, songStart = 1, song = 2, win=3, lose=4, reset =5};
 long unsigned int timer_cnt = 0;
 //char songNotes[28] = {'A', 'B', 'C', 'D'};
 //char songNotes[28] = {'C', 'C', 'D', 'E','C','E','D','C','C','D','E','C','B','C','C','D','E','F','E','D','C'}; // 21 notes
@@ -201,44 +201,79 @@ void main(void)
                 i++;
             }
             BuzzerOff();
-            runTimerA2(0);
+//            runTimerA2();
+
+            // Calculate player's score
+            // if lose send to lose state
+            // otherwise to win state
+
 
             setLeds('0' - 0x30);
+            Graphics_clearDisplay(&g_sContext);
             currKey = 0;
             state = welcome;
             break;
 
-//            for(i = 0; i< 4; i++){
-//                playNote(songNotes[i]);
-//                swDelay(2);
+//            while(1){
+//                currButton = readButtons();
+//
 //            }
+//
+//            currKey = getKey();
+//
+//            currButton = readButtons() + '0';
+//            if(currButton != '0'){
+//                setLeds(currButton - 0x30);
+//            }
+//            else{
+//                setLeds(0);
+//            }
+//            configUserLED('1' - '0');
+//
+//            if(currKey == '#'){
+//                Graphics_clearDisplay(&g_sContext);
+//                state = welcome;
+//            }
+//
+//            break;
 
-
-
-            while(1){
-                currButton = readButtons();
-
+        case win:
+            // display celebration
+            dispThree[0] = ' ';
+            dispThree[1] = ' '; // this could be the player's score
+            dispThree[2] = '\0';
+            for(i = 0; i < 4; i ++){
+                Graphics_drawStringCentered(&g_sContext, "YOU WON", AUTO_STRING_LENGTH, 28, 60 + i*10, TRANSPARENT_TEXT);
+                Graphics_drawStringCentered(&g_sContext, dispThree , AUTO_STRING_LENGTH, 54, 60 + i*10, TRANSPARENT_TEXT);
+                Graphics_drawStringCentered(&g_sContext, "CHIPS" , AUTO_STRING_LENGTH, 78, 60 + i*10, TRANSPARENT_TEXT);
             }
+            Graphics_flushBuffer(&g_sContext);
 
-            currKey = getKey();
+            //proper celebration w/ buzzer and leds
+            celebration();
 
-            currButton = readButtons() + '0';
-            if(currButton != '0'){
-                setLeds(currButton - 0x30);
+            while(currKey != '#'){
+                currKey = getKey();
             }
-            else{
-                setLeds(0);
-            }
-            configUserLED('1' - '0');
 
             if(currKey == '#'){
-                Graphics_clearDisplay(&g_sContext);
-                state = welcome;
+                // Go to reset state
+                state = reset;
             }
-
             break;
 
+
+        case lose:
+            // copy paste from winning state
+            break;
         }
+
+        case reset:
+            setLeds('0' - 0x30);
+            Graphics_clearDisplay(&g_sContext);
+            currKey = 0;
+            state = welcome;
+            break;
 
     }  // end while (1)
 }
@@ -253,6 +288,11 @@ void main(void)
 //        setLeds(0);
 //    }
 //}
+
+void celebration(void){
+    // play buzzer song
+}
+
 
 // given a note, the curresponding LED lights up and the corresponding buzzer frequency is sent
 void playNote(struct note note){
@@ -272,7 +312,6 @@ bool correctPress(unsigned char ledValue, unsigned int buttonPressed){
 void runTimerA2(){
     TA2CTL = TASSEL_1 + ID_0 + MC_1;
     TA2CCR0 = 163; // interrupt every 0.005
-//    TA2CCR0 = 327; // interrupt every 0.005
     TA2CCTL0 = CCIE;
 }
 
