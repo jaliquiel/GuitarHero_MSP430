@@ -17,9 +17,6 @@ void swDelay(char numLoops);
 // Declare globals here
 enum GAME_STATE {welcome = 0, songStart = 1, song = 2, win=3, lose=4, reset =5};
 long unsigned int timer_cnt = 0;
-//char winSong[28] = {'A', 'B', 'C', 'D'};
-//char loseSong[28] = {'A', 'B', 'C', 'D'};
-//char songNotes[28] = {'C', 'C', 'D', 'E','C','E','D','C','C','D','E','C','B','C','C','D','E','F','E','D','C'}; // 21 notes
 int i;
 long unsigned int noteDuration;
 long unsigned int noteStartTime;
@@ -29,6 +26,8 @@ long unsigned int noteStartTime;
 int correctNotes;
 bool pressedCorrect;
 bool pressedWrong;
+int reactTimer = 100;
+
 
 unsigned char dispFour[4] = {NULL, NULL, NULL, NULL};
 unsigned char dispThree[4] = {NULL, NULL, NULL};
@@ -64,18 +63,6 @@ void main(void)
 
     correctNotes = 0;
 
-//    int songNoteLength = 7;
-//    struct note songNotes[28] =
-//    {
-//     {'A', 440, '8' - 0x30, 200},
-//     {'B', 494, '4' - 0x30, 200},
-//     {'C', 523, '2' - 0x30, 200},
-//     {'D', 587, '1' - 0x30, 200},
-//     {'E', 659, '8' - 0x30, 200},
-//     {'F', 698, '4' - 0x30, 200},
-//     {'G', 784, '2' - 0x30, 200},
-//    };
-
     int loseSongLength = 4;
     struct note loseSong[4]=
     {
@@ -93,6 +80,7 @@ void main(void)
      {'C', 523, '2' - 0x30, 200},
      {'D', 587, '1' - 0x30, 200},
     };
+
 
     int songNoteLength = 54;
     struct note songNotes[54] =
@@ -134,7 +122,7 @@ void main(void)
 
      {'A', 440, '8' - 0x30, 150},
      {'B', 494, '4' - 0x30, 50},
-     {'A', 880, '8' - 0x30, 100},
+     {'A', 440, '8' - 0x30, 100},
      {'G', 784, '2' - 0x30, 100},
 
      {'A', 440, '8' - 0x30, 100},
@@ -188,9 +176,7 @@ void main(void)
             }
             if(currKey == '*'){
                 Graphics_clearDisplay(&g_sContext); // Clear the display
-//                state = songStart;
                 state = songStart;
-
             }
             break;
 
@@ -238,118 +224,80 @@ void main(void)
                 pressedCorrect = false;
                 pressedWrong = false;
 
-//                while(timer_cnt < noteStartTime + 50){ // half a second react time to correct note
-//                    setLeds(currentNote.ledValue);
-//
-//                    currButton = readButtons();
-//                    if(correctPress(currentNote.ledValue,currButton)){
-//                        pressedCorrect = true;
-//                        configUserLED('2'-'0'); // right LED on green
-//                    }else if(currButton == 0){
-//                        // did not press anything
-//                    }
-//                    else{
-//                        // pressed the wrong note
-//                        configUserLED('1'-'0'); // left LED on red
-//                        pressedWrong = true;
-////                        break;
-//                    }
-//
-//                    if(pressedCorrect)
-//                        playNote(currentNote);
-//
-//                }
-
-
-                while(timer_cnt < noteStartTime + currentNote.noteDuration + 50){ // half a second react time
+                while(timer_cnt < noteStartTime + reactTimer){ // half a second react time to correct note
                     setLeds(currentNote.ledValue);
+                    configUserLED('3'-'0'); // both LED
 
                     currButton = readButtons();
                     if(correctPress(currentNote.ledValue,currButton)){
                         pressedCorrect = true;
-                        configUserLED('2'-'0'); // right LED on green
+                        break;
                     }else if(currButton == 0){
                         // did not press anything
                     }
                     else{
                         // pressed the wrong note
-                        configUserLED('1'-'0'); // left LED on red
                         pressedWrong = true;
-//                        break;
+                        break;
                     }
-
-                    if(pressedCorrect)
-                        playNote(currentNote);
-
                 }
-                while(timer_cnt < noteStartTime + currentNote.noteDuration + 50 + 15){ // buffer between notes
-                    if (pressedWrong){
-//                        BuzzerNote(currentNote.frequency + 100);
+
+                setLeds(0);
+                if(pressedCorrect){
+                    while(timer_cnt < noteStartTime + currentNote.noteDuration + reactTimer){ // play note if pressed correct
+//                        setLeds(currentNote.ledValue);
+                        configUserLED('2'-'0'); // right LED on green
+                        BuzzerNote(currentNote.frequency);
+                    }
+                }else if (pressedWrong){
+                    while(timer_cnt < noteStartTime + currentNote.noteDuration + reactTimer){ // play note if pressed correct
+//                        setLeds(currentNote.ledValue);
+                        configUserLED('1'-'0'); // left LED on red
                         BuzzerNote(1000);
-                    }else{
-                        BuzzerOff();
+                        setLeds(15);
                     }
-                    setLeds(0);
+                }else{
+                    while(timer_cnt < noteStartTime + currentNote.noteDuration + reactTimer){ // be silentif nothing pressed
+                        // nothing
+                        setLeds(15);
+                    }
                 }
+                BuzzerOff();
+                setLeds(0);
                 configUserLED('0');
                 i++;
                 if(pressedCorrect)
                     correctNotes++;
             }
             BuzzerOff();
-//            runTimerA2();
 
-            // Calculate player's score
-            // if lose send to lose state
-            // otherwise to win state
+            // Calculate player's score, if player lost send to lose state, otherwise to win state
+            state = checkScore(correctNotes, songNoteLength);
 
             setLeds('0' - 0x30);
             Graphics_clearDisplay(&g_sContext);
             currKey = 0;
-            state = win;
             break;
 
-//            while(1){
-//                currButton = readButtons();
-//
-//            }
-//
-//            currKey = getKey();
-//
-//            currButton = readButtons() + '0';
-//            if(currButton != '0'){
-//                setLeds(currButton - 0x30);
-//            }
-//            else{
-//                setLeds(0);
-//            }
-//            configUserLED('1' - '0');
-//
-//            if(currKey == '#'){
-//                Graphics_clearDisplay(&g_sContext);
-//                state = welcome;
-//            }
-//
-//            break;
-
         case win:
-
-
+            Graphics_clearDisplay(&g_sContext);
             sprintf(score, "%d", correctNotes);
-
-            // display celebration
-//            dispThree[0] = ' ';
-//            dispThree[1] = ' '; // this could be the player's score
-//            dispThree[2] = '\0';
-            for(i = 0; i < 4; i ++){
-                Graphics_drawStringCentered(&g_sContext, "YOU WON", AUTO_STRING_LENGTH, 28, 60 + i*10, TRANSPARENT_TEXT);
-                Graphics_drawStringCentered(&g_sContext, score , AUTO_STRING_LENGTH, 54, 60 + i*10, TRANSPARENT_TEXT);
-                Graphics_drawStringCentered(&g_sContext, "CHIPS" , AUTO_STRING_LENGTH, 78, 60 + i*10, TRANSPARENT_TEXT);
+            for(i = 1; i < 10; i ++){
+                if (i == 4)
+                    continue;
+                Graphics_drawStringCentered(&g_sContext, "YOU WON", AUTO_STRING_LENGTH, 50, i*10, TRANSPARENT_TEXT);
             }
+            Graphics_drawStringCentered(&g_sContext, score , AUTO_STRING_LENGTH, 30, 40, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "CORRECT" , AUTO_STRING_LENGTH, 60, 40, TRANSPARENT_TEXT);
             Graphics_flushBuffer(&g_sContext);
 
             //proper celebration w/ buzzer and leds
-            celebration();
+            for(i=0;i<winSongLength; i++){
+                struct note note = winSong[i];
+                BuzzerNote(note.frequency);
+                swDelay(1);
+            }
+            BuzzerOff();
 
             while(currKey != '#'){
                 currKey = getKey();
@@ -363,21 +311,26 @@ void main(void)
 
 
         case lose:
-            // copy paste from winning state
-
             // display celebration
-            dispThree[0] = ' ';
-            dispThree[1] = ' '; // this could be the player's score
-            dispThree[2] = '\0';
-            for(i = 0; i < 4; i ++){
-                Graphics_drawStringCentered(&g_sContext, "YOU LOSE", AUTO_STRING_LENGTH, 28, 60 + i*10, TRANSPARENT_TEXT);
-                Graphics_drawStringCentered(&g_sContext, dispThree , AUTO_STRING_LENGTH, 54, 60 + i*10, TRANSPARENT_TEXT);
-                Graphics_drawStringCentered(&g_sContext, "CHIPS" , AUTO_STRING_LENGTH, 78, 60 + i*10, TRANSPARENT_TEXT);
+            Graphics_clearDisplay(&g_sContext);
+            sprintf(score, "%d", correctNotes);
+            for(i = 1; i < 10; i ++){
+                if (i == 4)
+                    continue;
+                Graphics_drawStringCentered(&g_sContext, "YOU LOST", AUTO_STRING_LENGTH, 50, i*10, TRANSPARENT_TEXT);
             }
+            Graphics_drawStringCentered(&g_sContext, score , AUTO_STRING_LENGTH, 30, 40, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "CORRECT" , AUTO_STRING_LENGTH, 60, 40, TRANSPARENT_TEXT);
             Graphics_flushBuffer(&g_sContext);
 
             //proper celebration w/ buzzer and leds
-            celebration();
+            for(i=0;i<loseSongLength; i++){
+                struct note note = loseSong[i];
+                BuzzerNote(note.frequency);
+                swDelay(1);
+            }
+            BuzzerOff();
+
 
             while(currKey != '#'){
                 currKey = getKey();
@@ -399,7 +352,7 @@ void main(void)
             for(i = 0; i< 3; i++){
                 score[i] = NULL;
             }
-
+            stopTimerA2(1);
             break;
 
         }// end switch
@@ -407,18 +360,24 @@ void main(void)
     }  // end while (1)
 }
 
-//void heroButtons(void){
-//    int currButton = readButtons();
-//    currButton += '0';
-//    if(currButton != '0'){
-//        setLeds(currButton - 0x30);
-//    }
-//    else{
-//        setLeds(0);
-//    }
-//}
+
+int correctNotes;
+int songNoteLength = 54;
+
+// false if player lost, true if player won
+int checkScore(int correctNotes, int songNoteLength){
+    if (songNoteLength*2/3 > correctNotes){
+        return lose;
+    }
+    return win;
+}
+
 
 void celebration(void){
+    // play buzzer song
+}
+
+void humiliation(void){
     // play buzzer song
 }
 
