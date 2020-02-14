@@ -26,10 +26,13 @@ long unsigned int noteStartTime;
 
 
 // variables for displaying score
-int missedNotes;
+int correctNotes;
+bool pressedCorrect;
+bool pressedWrong;
+
 unsigned char dispFour[4] = {NULL, NULL, NULL, NULL};
 unsigned char dispThree[4] = {NULL, NULL, NULL};
-
+char score[3] = {NULL, NULL, NULL};
 
 struct note{
     char name;
@@ -59,19 +62,19 @@ void main(void)
     unsigned int m;
     enum GAME_STATE state = welcome;
 
-    missedNotes = 0;
+    correctNotes = 0;
 
-    int songNoteLength = 7;
-    struct note songNotes[28] =
-    {
-     {'A', 440, '8' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'D', 587, '1' - 0x30, 200},
-     {'E', 659, '8' - 0x30, 200},
-     {'F', 698, '4' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-    };
+//    int songNoteLength = 7;
+//    struct note songNotes[28] =
+//    {
+//     {'A', 440, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'D', 587, '1' - 0x30, 200},
+//     {'E', 659, '8' - 0x30, 200},
+//     {'F', 698, '4' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//    };
 
     int loseSongLength = 4;
     struct note loseSong[4]=
@@ -89,8 +92,9 @@ void main(void)
      {'B', 494, '4' - 0x30, 200},
      {'C', 523, '2' - 0x30, 200},
      {'D', 587, '1' - 0x30, 200},
+    };
 
-     int songNoteLength = 54;
+    int songNoteLength = 54;
     struct note songNotes[54] =
     {
      {'C', 523, '2' - 0x30, 100},
@@ -162,7 +166,8 @@ void main(void)
 
      {'C', 523, '2' - 0x30, 200},
      {'C', 523, '2' - 0x30, 200},
-
+    };
+//
 
 
     while (1)    // Forever loop
@@ -184,7 +189,7 @@ void main(void)
             if(currKey == '*'){
                 Graphics_clearDisplay(&g_sContext); // Clear the display
 //                state = songStart;
-                state = win;
+                state = songStart;
 
             }
             break;
@@ -223,27 +228,73 @@ void main(void)
         case song:
 
             i = 0;
-            noteDuration = 200;
+            correctNotes = 0;
+            runTimerA2();
+
             while(i < songNoteLength){
-                runTimerA2();
                 struct note currentNote = songNotes[i];
 
                 noteStartTime = timer_cnt;
-                while(timer_cnt < noteStartTime + noteDuration){
+                pressedCorrect = false;
+                pressedWrong = false;
+
+//                while(timer_cnt < noteStartTime + 50){ // half a second react time to correct note
+//                    setLeds(currentNote.ledValue);
+//
+//                    currButton = readButtons();
+//                    if(correctPress(currentNote.ledValue,currButton)){
+//                        pressedCorrect = true;
+//                        configUserLED('2'-'0'); // right LED on green
+//                    }else if(currButton == 0){
+//                        // did not press anything
+//                    }
+//                    else{
+//                        // pressed the wrong note
+//                        configUserLED('1'-'0'); // left LED on red
+//                        pressedWrong = true;
+////                        break;
+//                    }
+//
+//                    if(pressedCorrect)
+//                        playNote(currentNote);
+//
+//                }
+
+
+                while(timer_cnt < noteStartTime + currentNote.noteDuration + 50){ // half a second react time
+                    setLeds(currentNote.ledValue);
+
                     currButton = readButtons();
                     if(correctPress(currentNote.ledValue,currButton)){
+                        pressedCorrect = true;
                         configUserLED('2'-'0'); // right LED on green
-                    }else{
-                        configUserLED('1'-'0'); // left LED on red
+                    }else if(currButton == 0){
+                        // did not press anything
                     }
-                    playNote(currentNote);
+                    else{
+                        // pressed the wrong note
+                        configUserLED('1'-'0'); // left LED on red
+                        pressedWrong = true;
+//                        break;
+                    }
+
+                    if(pressedCorrect)
+                        playNote(currentNote);
 
                 }
-                while(timer_cnt < noteStartTime + noteDuration + 15){
-                    BuzzerOff();
+                while(timer_cnt < noteStartTime + currentNote.noteDuration + 50 + 15){ // buffer between notes
+                    if (pressedWrong){
+//                        BuzzerNote(currentNote.frequency + 100);
+                        BuzzerNote(1000);
+                    }else{
+                        BuzzerOff();
+                    }
+                    setLeds(0);
                 }
                 configUserLED('0');
                 i++;
+                if(pressedCorrect)
+                    correctNotes++;
             }
             BuzzerOff();
 //            runTimerA2();
@@ -255,7 +306,7 @@ void main(void)
             setLeds('0' - 0x30);
             Graphics_clearDisplay(&g_sContext);
             currKey = 0;
-            state = welcome;
+            state = win;
             break;
 
 //            while(1){
@@ -282,13 +333,17 @@ void main(void)
 //            break;
 
         case win:
+
+
+            sprintf(score, "%d", correctNotes);
+
             // display celebration
-            dispThree[0] = ' ';
-            dispThree[1] = ' '; // this could be the player's score
-            dispThree[2] = '\0';
+//            dispThree[0] = ' ';
+//            dispThree[1] = ' '; // this could be the player's score
+//            dispThree[2] = '\0';
             for(i = 0; i < 4; i ++){
                 Graphics_drawStringCentered(&g_sContext, "YOU WON", AUTO_STRING_LENGTH, 28, 60 + i*10, TRANSPARENT_TEXT);
-                Graphics_drawStringCentered(&g_sContext, dispThree , AUTO_STRING_LENGTH, 54, 60 + i*10, TRANSPARENT_TEXT);
+                Graphics_drawStringCentered(&g_sContext, score , AUTO_STRING_LENGTH, 54, 60 + i*10, TRANSPARENT_TEXT);
                 Graphics_drawStringCentered(&g_sContext, "CHIPS" , AUTO_STRING_LENGTH, 78, 60 + i*10, TRANSPARENT_TEXT);
             }
             Graphics_flushBuffer(&g_sContext);
@@ -340,7 +395,11 @@ void main(void)
             Graphics_clearDisplay(&g_sContext);
             currKey = 0;
             state = welcome;
-            missedNotes = 0;
+            pressedCorrect = 0;
+            for(i = 0; i< 3; i++){
+                score[i] = NULL;
+            }
+
             break;
 
         }// end switch
@@ -368,7 +427,7 @@ void celebration(void){
 void playNote(struct note note){
 
     setLeds(note.ledValue);
-//    BuzzerNote(note.frequency);
+    BuzzerNote(note.frequency);
 
 }
 
