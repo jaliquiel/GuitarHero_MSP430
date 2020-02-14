@@ -7,7 +7,7 @@
  */
 
 
-
+#include "stdio.h"
 #include <msp430.h>
 #include "peripherals.h"
 
@@ -17,11 +17,19 @@ void swDelay(char numLoops);
 // Declare globals here
 enum GAME_STATE {welcome = 0, songStart = 1, song = 2, win=3, lose=4, reset =5};
 long unsigned int timer_cnt = 0;
-//char songNotes[28] = {'A', 'B', 'C', 'D'};
+//char winSong[28] = {'A', 'B', 'C', 'D'};
+//char loseSong[28] = {'A', 'B', 'C', 'D'};
 //char songNotes[28] = {'C', 'C', 'D', 'E','C','E','D','C','C','D','E','C','B','C','C','D','E','F','E','D','C'}; // 21 notes
 int i;
 long unsigned int noteDuration;
 long unsigned int noteStartTime;
+
+
+// variables for displaying score
+int missedNotes;
+unsigned char dispFour[4] = {NULL, NULL, NULL, NULL};
+unsigned char dispThree[4] = {NULL, NULL, NULL};
+
 
 struct note{
     char name;
@@ -51,73 +59,94 @@ void main(void)
     unsigned int m;
     enum GAME_STATE state = welcome;
 
-//    struct note songNotes[28] =
+    missedNotes = 0;
+
+    int songNoteLength = 7;
+    struct note songNotes[28] =
+    {
+     {'A', 440, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'D', 587, '1' - 0x30, 200},
+     {'E', 659, '8' - 0x30, 200},
+     {'F', 698, '4' - 0x30, 200},
+     {'G', 784, '2' - 0x30, 200},
+    };
+
+    int loseSongLength = 4;
+    struct note loseSong[4]=
+    {
+     {'D', 587, '1' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'A', 440, '8' - 0x30, 200},
+    };
+
+    int winSongLength = 4;
+    struct note winSong[4]=
+    {
+     {'A', 440, '8' - 0x30, 200},
+     {'B', 494, '4' - 0x30, 200},
+     {'C', 523, '2' - 0x30, 200},
+     {'D', 587, '1' - 0x30, 200},
+    };
+
+//    int songNoteLength = 51;
+//    struct note songNotes[51] =
 //    {
-//     {'A', 440, '8' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'D', 587, '1' - 0x30, 200},
+//     {'E', 659, '8' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'E', 659, '8' - 0x30, 200},
+//     {'D', 587, '1' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'D', 587, '1' - 0x30, 200},
+//     {'E', 659, '8' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
 //     {'B', 494, '4' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
 //     {'C', 523, '2' - 0x30, 200},
 //     {'D', 587, '1' - 0x30, 200},
 //     {'E', 659, '8' - 0x30, 200},
 //     {'F', 698, '4' - 0x30, 200},
+//     {'E', 659, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
 //     {'G', 784, '2' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//     {'F', 698, '4' - 0x30, 200},
+//     {'E', 659, '8' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'A', 440, '8' - 0x30, 200},
+//     {'G', 784, '2' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'B', 494, '4' - 0x30, 200},
+//     {'D', 587, '1' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
+//     {'C', 523, '2' - 0x30, 200},
 //    };
-
-    int songNoteLength = 51;
-    struct note songNotes[51] =
-    {
-     {'C', 523, '2' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'D', 587, '1' - 0x30, 200},
-     {'E', 659, '8' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'E', 659, '8' - 0x30, 200},
-     {'D', 587, '1' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'D', 587, '1' - 0x30, 200},
-     {'E', 659, '8' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'D', 587, '1' - 0x30, 200},
-     {'E', 659, '8' - 0x30, 200},
-     {'F', 698, '4' - 0x30, 200},
-     {'E', 659, '8' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-     {'F', 698, '4' - 0x30, 200},
-     {'E', 659, '8' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'A', 440, '8' - 0x30, 200},
-     {'G', 784, '2' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'B', 494, '4' - 0x30, 200},
-     {'D', 587, '1' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-     {'C', 523, '2' - 0x30, 200},
-    };
 
 
 
@@ -139,7 +168,9 @@ void main(void)
             }
             if(currKey == '*'){
                 Graphics_clearDisplay(&g_sContext); // Clear the display
-                state = songStart;
+//                state = songStart;
+                state = win;
+
             }
             break;
 
@@ -176,7 +207,6 @@ void main(void)
 
         case song:
 
-
             i = 0;
             noteDuration = 200;
             while(i < songNoteLength){
@@ -206,7 +236,6 @@ void main(void)
             // Calculate player's score
             // if lose send to lose state
             // otherwise to win state
-
 
             setLeds('0' - 0x30);
             Graphics_clearDisplay(&g_sContext);
@@ -265,15 +294,41 @@ void main(void)
 
         case lose:
             // copy paste from winning state
+
+            // display celebration
+            dispThree[0] = ' ';
+            dispThree[1] = ' '; // this could be the player's score
+            dispThree[2] = '\0';
+            for(i = 0; i < 4; i ++){
+                Graphics_drawStringCentered(&g_sContext, "YOU LOSE", AUTO_STRING_LENGTH, 28, 60 + i*10, TRANSPARENT_TEXT);
+                Graphics_drawStringCentered(&g_sContext, dispThree , AUTO_STRING_LENGTH, 54, 60 + i*10, TRANSPARENT_TEXT);
+                Graphics_drawStringCentered(&g_sContext, "CHIPS" , AUTO_STRING_LENGTH, 78, 60 + i*10, TRANSPARENT_TEXT);
+            }
+            Graphics_flushBuffer(&g_sContext);
+
+            //proper celebration w/ buzzer and leds
+            celebration();
+
+            while(currKey != '#'){
+                currKey = getKey();
+            }
+
+            if(currKey == '#'){
+                // Go to reset state
+                state = reset;
+            }
             break;
-        }
+
 
         case reset:
             setLeds('0' - 0x30);
             Graphics_clearDisplay(&g_sContext);
             currKey = 0;
             state = welcome;
+            missedNotes = 0;
             break;
+
+        }// end switch
 
     }  // end while (1)
 }
@@ -298,7 +353,7 @@ void celebration(void){
 void playNote(struct note note){
 
     setLeds(note.ledValue);
-    BuzzerNote(note.frequency);
+//    BuzzerNote(note.frequency);
 
 }
 
@@ -355,17 +410,5 @@ __interrupt void TIMER_A2_ISR (void)
     // Not sure where Timer A1 is configured?
 //    Sharp96x96_SendToggleVCOMCommand();  // display needs this toggle < 1 per sec
     timer_cnt++;
-
-//                    if (timer_cnt % 200 == 0){
-//                        i++;
-//                    }
-//                    playNote(songNotes[i]);
-
-
-
-//    if (timer_cnt == 600000){
-//        timer_cnt = 0;
-//    }
-
 
 }
